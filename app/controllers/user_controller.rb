@@ -4,8 +4,8 @@ class UserController < ApplicationController
         i = username.length - 1
         tmp = username
         tmp[i] += 1
-        while i >= 0
-            if tmp[i] > 90 and i != 0
+        while i > 0
+            if tmp[i] > 90
                 tmp[i] = 65
                 tmp[i - 1] += 1
             end
@@ -27,6 +27,7 @@ class UserController < ApplicationController
         return tmp.pack("C*")
     end
 
+    # POST /users/create/:username
     def create
         # Check if parameters are ok
         if !params.has_key?(:username)
@@ -46,19 +47,19 @@ class UserController < ApplicationController
         user = User.new(:username => params[:username])
         response = {}
 
-        if user.valid? and index == nil
+        if index == nil
             response = {"status": "OK"}
         elsif user.valid?
             user.username = generate_unused_username(params[:username], users, index)
             response = {"username": user.username}
-        elsif user.errors
-            render json: {"code": 406, "error": user.errors.messages }, status: :not_acceptable
-            return
         end
 
         # Commit model and check errors
         if user.save
             render json: response, status: :ok
+        elsif user.errors
+            render json: {"code": 406, "error": user.errors.messages }, status: :not_acceptable
+            return
         else
             render json: {"code": 500 }, status: :internal_server_error
         end
